@@ -6,3 +6,4 @@ cmake ..
 echo building...
 make "$@"
 echo build complete
+./server.wt --http-address=0.0.0.0 --http-port=8080 --deploy-path=/hello --docroot=../src/docroot/
