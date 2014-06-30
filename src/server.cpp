@@ -23,9 +23,9 @@ protected:
   virtual void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) {
     static bool firstRequest = true;
     if (firstRequest) {
-      BSONObj query;
+      Query query;
       conn.connect("localhost");
-      cursor = conn.query("geodata.taxis", query);
+      cursor = conn.query("geodata.taxis", query.sort("pickup_datetime"));
       nTripsReturned = 0;
       firstRequest = false;
     }
@@ -36,8 +36,8 @@ protected:
       return;
     }
 
-    if (nTripsReturned % 10000 == 0)
-      cout << nTripsReturned << endl;
+    if (nTripsReturned % 100000 == 0)
+      cout << endl << nTripsReturned << endl << endl;
 
     response.out() << "[ " << cursor->next().jsonString(Strict, true);
     nTripsReturned++;
@@ -50,7 +50,7 @@ protected:
   }
 
 private:
-  static const size_t kBatchSize = 10;
+  static const size_t kBatchSize = 1000;
   size_t nTripsReturned;
   auto_ptr<DBClientCursor> cursor;
   DBClientConnection conn;

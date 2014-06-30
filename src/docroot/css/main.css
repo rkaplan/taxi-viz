@@ -2,8 +2,19 @@ body {
 	background-color: #272822;
 }
 
+h1, h2, h3 {
+	color: white;
+	font-size: 30px;
+	font-weight: 300;
+	font-family: "Helvetica Neue";
+}
+
+.container {
+	text-align: center;
+}
+
 #map {
-	padding-top: 50px;
+	padding-top: 20px;
 	width: 960px;
 	margin-left: auto;
 	margin-right: auto;

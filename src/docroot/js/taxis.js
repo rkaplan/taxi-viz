@@ -35,6 +35,9 @@ function renderTrips() {
       if (trips === undefined || trips.length === 0) {
         clearInterval(intervalId);
       } else {
+        var pickupDate = new Date(Date.parse(trips[0].pickup_datetime["$date"]));
+        $("#latestTripDateTime").html(pickupDate.toUTCString());
+
         svg.selectAll("circle.unknown")
           .data(_.map(trips, function(trip){ return trip.start_loc }))
           .enter()
