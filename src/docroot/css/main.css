@@ -1,0 +1,16 @@
+body {
+	background-color: #272822;
+}
+
+#map {
+	padding-top: 50px;
+	width: 960px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#boroughs {
+  stroke: grey;
+  stroke-width: 2px;
+  fill: white;
+}

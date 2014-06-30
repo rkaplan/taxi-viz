@@ -21,20 +21,38 @@ public:
 
 protected:
   virtual void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) {
-    string host = "localhost";
-    conn.connect(host);
+    static bool firstRequest = true;
+    if (firstRequest) {
+      BSONObj query;
+      conn.connect("localhost");
+      cursor = conn.query("geodata.taxis", query);
+      nTripsReturned = 0;
+      firstRequest = false;
+    }
 
-    BSONObj query;
-    auto_ptr<DBClientCursor> cursor = conn.query("geodata.taxis", query);
+    if (!cursor->more()) {
+      cout << endl << endl << "------------ALL DONE------------" << endl << endl;
+      response.out() << "[]\r\n";
+      return;
+    }
+
+    if (nTripsReturned % 10000 == 0)
+      cout << nTripsReturned << endl;
+
     response.out() << "[ " << cursor->next().jsonString(Strict, true);
-    for (size_t i = 0; i < 10 && cursor->more(); i++) {
+    nTripsReturned++;
+    for (size_t i = 0; i < kBatchSize - 1 && cursor->more(); i++) {
       string s = cursor->next().jsonString(Strict, true);
       response.out() << ",\n" << s;
+      nTripsReturned++;
     }
     response.out() << " ]\r\n";
   }
 
 private:
+  static const size_t kBatchSize = 10;
+  size_t nTripsReturned;
+  auto_ptr<DBClientCursor> cursor;
   DBClientConnection conn;
 };
 
