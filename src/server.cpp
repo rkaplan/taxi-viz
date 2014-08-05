@@ -31,7 +31,7 @@ protected:
     }
 
     if (!cursor->more()) {
-      cout << endl << endl << "------------ALL DONE------------" << endl << endl;
+      cout << endl << endl << "------------ALL DONE------------" << endl << endl << endl;
       response.out() << "[]\r\n";
       return;
     }
@@ -50,7 +50,7 @@ protected:
   }
 
 private:
-  static const size_t kBatchSize = 1000;
+  static const size_t kBatchSize = 20;
   size_t nTripsReturned;
   auto_ptr<DBClientCursor> cursor;
   DBClientConnection conn;
