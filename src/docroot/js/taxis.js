@@ -111,15 +111,29 @@ function resetView() {
     .transition().duration(200).style("fill-opacity", .8)
     .transition().duration(5000).style("fill", "yellow")
     .transition().duration(10000).style("fill-opacity", ".1")
+
+   path.pointRadius(8)
+   d3_centerpoint.attr("d", path)
+    .style("fill-opacity", .8)
+    .attr("fill", "green")
+    .transition().duration(500).style("fill-opacity", 0)
 }
 
 function processTripData(trips) {
+  var centerPoint = trips.pop();
+  console.log(centerPoint);
+
   startLocs = _.map(trips, function(trip){ return trip.start_loc });
   updateFeatures(startLocs);
 
   // create path elements for each of the features
   d3_features = g.selectAll("path.unknown")
     .data(startLocs)
+    .enter()
+    .append("path")
+
+  d3_centerpoint = g.selectAll("path.unknown")
+    .data([centerPoint])
     .enter()
     .append("path")
 
