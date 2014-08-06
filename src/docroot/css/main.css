@@ -13,6 +13,10 @@ h1, h2, h3 {
     text-align: center;
 }
 
+.trip-date h2 {
+    margin-top: 8px;
+}
+
 #map {
     padding-top: 20px;
     top: 50px;

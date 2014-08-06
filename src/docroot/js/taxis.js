@@ -1,11 +1,10 @@
 var map, svg, g;
 
 function setupMapbox() {
-  map = L.mapbox.map("map", "rkaplan.j3k8g195").setView([40.757369, -73.960791], 12);
+  map = L.mapbox.map("map", "rkaplan.j3k8g195").setView([40.757369, -73.960791], 13);
   svg = d3.select(map.getPanes().overlayPane).append("svg");
   g = svg.append("g").attr("class", "leaflet-zoom-hide");
 }
-
 
 // var projection = d3.geo.mercator()
 //         .center([-73.94, 40.70])
@@ -35,8 +34,54 @@ var path = d3.geo.path().projection(transform);
 var startLocs;
 var globalBounds;
 
+// var bbox;
+
+allPointsFeatColl = {
+  "type": "FeatureCollection",
+  "features": []
+};
+
+// // function updateBbox(startLocs) {
+//   if (!bbox) {
+//     bbox = {
+//      "type": "Feature",
+//      "geometry": {
+//       "type": "Polygon",
+//       "coordinates": [ [
+//       [ startLocs[0].coordinates[0], startLocs[0].coordinates[1] ], // top left
+//       [ startLocs[0].coordinates[0], startLocs[0].coordinates[1] ], // bottom right
+//       ] ]
+//       }
+//     };
+//     // bbox.geometry.coordinates[0][0][0] = startLocs[0].coordinates[0];
+//     // bbox.geometry.coordinates[0][0][1] = startLocs[0].coordinates[1];
+//     // bbox.geometry.coordinates[0][1][0] = startLocs[0].coordinates[0];
+//     // bbox.geometry.coordinates[0][1][1] = startLocs[0].coordinates[1];
+//   }
+
+//   for (var i = 0; i < startLocs.length; i++) {
+//     // top left
+//     if (startLocs[i].coordinates[0] < bbox.geometry.coordinates[0][0][0])
+//       bbox.geometry.coordinates[0][0][0] = startLocs[i].coordinates[0];
+//     if (startLocs[i].coordinates[1] < bbox.geometry.coordinates[0][0][1])
+//       bbox.geometry.coordinates[0][0][1] = startLocs[i].coordinates[1];
+
+//     // bottom right
+//     if (startLocs[i].coordinates[0] > bbox.geometry.coordinates[0][1][0])
+//       bbox.geometry.coordinates[0][1][0] = startLocs[i].coordinates[0];
+//     if (startLocs[i].coordinates[1] > bbox.geometry.coordinates[0][1][1])
+//       bbox.geometry.coordinates[0][1][1] = startLocs[i].coordinates[1];
+//   }
+// }
+
 function resetView() {
-  var bounds = path.bounds(toFeatureCollection(startLocs));
+  console.log("resetview!")
+  // updateBbox(startLocs);
+  var bounds = path.bounds(allPointsFeatColl);
+  console.log("globalBounds:")
+  console.log(globalBounds);
+  console.log("bounds:")
+  console.log(bounds)
   if (globalBounds) {
     if (bounds[0][0] < globalBounds[0][0]) globalBounds[0][0] = bounds[0][0];
     if (bounds[0][1] < globalBounds[0][1]) globalBounds[0][1] = bounds[0][1];
@@ -49,6 +94,8 @@ function resetView() {
   var topLeft = globalBounds[0],
   bottomRight = globalBounds[1];
 
+  console.log("topLeft: ", topLeft, " bottomRight: ", bottomRight)
+
   svg.attr("width", bottomRight[0] - topLeft[0])
    .attr("height", bottomRight[1] - topLeft[1])
    .style("left", topLeft[0] + "px")
@@ -57,6 +104,7 @@ function resetView() {
    g.attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
 
    // initialize the path data
+   path.pointRadius(3)
    d3_features.attr("d", path)
     .style("fill-opacity", .1)
     .attr("fill", "red")
@@ -67,18 +115,18 @@ function resetView() {
 
 function processTripData(trips) {
   startLocs = _.map(trips, function(trip){ return trip.start_loc });
+  updateFeatures(startLocs);
 
   // create path elements for each of the features
   d3_features = g.selectAll("path.unknown")
     .data(startLocs)
     .enter()
     .append("path")
-    .attr("stroke-width", "1");
 
   resetView();
 
-  // var pickupDate = new Date(Date.parse(trips[0].pickup_datetime["$date"]));
-  // $("#latestTripDateTime").html(pickupDate.toUTCString());
+  var pickupDate = new Date(Date.parse(trips[0].pickup_datetime["$date"]));
+  $("#latestTripDateTime").html(pickupDate.toUTCString());
 
   // svg.selectAll("circle.unknown")
   //   .data(_.map(trips, function(trip){ return trip.start_loc }))
@@ -104,14 +152,11 @@ function processTripData(trips) {
 function renderTrips() {
   var intervalId = setInterval(function() {
     d3.json("geo", function(error, trips) {
-
-
       if (trips === undefined || trips.length === 0) {
         clearInterval(intervalId);
       } else {
         processTripData(trips);
       }
-
     });
   }, 200);
 
@@ -134,6 +179,15 @@ function toFeatureCollection(geojsonArr) {
   }
 }
 
+function updateFeatures(geojsonArr) {
+  for (var i = 0; i < geojsonArr.length; i++) {
+    allPointsFeatColl.features.push({
+      "type": "Feature",
+      "geometry": geojsonArr[i]
+    });
+  }
+}
+
 function projectPoint(x, y) {
   var point = map.latLngToLayerPoint(new L.LatLng(y, x));
   this.stream.point(point.x, point.y);
@@ -142,3 +196,4 @@ function projectPoint(x, y) {
 setupMapbox();
 // renderBackground();
 renderTrips();
+$('.leaflet-control-zoom').hide();

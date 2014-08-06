@@ -4,6 +4,7 @@
 
 #include <mongo/client/dbclient.h> // for the driver
 #include <mongo/bson/bson.h>
+#include <mongo/geo/interface.h>
 
 #include <Wt/WServer>
 #include <Wt/WResource>
@@ -15,35 +16,34 @@ using namespace std;
 
 class GeoQueryHandler : public Wt::WResource {
 public:
+  GeoQueryHandler() {
+    Query query;
+    conn.connect("localhost");
+    cursor = conn.query("geodata.taxis", query.sort("pickup_datetime"));
+    nTripsReturned = 0;
+  }
   virtual ~GeoQueryHandler() {
     beingDeleted();
   }
 
 protected:
   virtual void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) {
-    static bool firstRequest = true;
-    if (firstRequest) {
-      Query query;
-      conn.connect("localhost");
-      cursor = conn.query("geodata.taxis", query.sort("pickup_datetime"));
-      nTripsReturned = 0;
-      firstRequest = false;
-    }
-
     if (!cursor->more()) {
       cout << endl << endl << "------------ALL DONE------------" << endl << endl << endl;
       response.out() << "[]\r\n";
       return;
     }
 
-    if (nTripsReturned % 100000 == 0)
-      cout << endl << nTripsReturned << endl << endl;
+    vector<BSONObj> trips;
 
-    response.out() << "[ " << cursor->next().jsonString(Strict, true);
+    BSONObj curTrip(cursor->next());
+    response.out() << "[ " << curTrip.jsonString(Strict, true);
+    trips.push_back(curTrip);
     nTripsReturned++;
     for (size_t i = 0; i < kBatchSize - 1 && cursor->more(); i++) {
-      string s = cursor->next().jsonString(Strict, true);
-      response.out() << ",\n" << s;
+      curTrip = cursor->next();
+      response.out() << ",\n" << curTrip.jsonString(Strict, true);
+      trips.push_back(curTrip);
       nTripsReturned++;
     }
     response.out() << " ]\r\n";
