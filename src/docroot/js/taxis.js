@@ -62,7 +62,7 @@ function resetView(userDidZoom) {
       d3_features.attr("d", path)
       .style("fill-opacity", .5)
       .attr("fill", "yellow")
-      .transition().duration(10000).style("fill-opacity", ".1")
+      .transition().duration(10000).style("fill-opacity", .25)
 
       cleanTripsStuckToPixels();
    } else {
@@ -71,8 +71,8 @@ function resetView(userDidZoom) {
       .style("fill-opacity", .1)
       .attr("fill", "red")
       .transition().duration(200).style("fill-opacity", .8)
-      .transition().duration(5000).style("fill", "yellow")
-      .transition().duration(10000).style("fill-opacity", ".1")
+      .transition().duration(1000).style("fill", "yellow")
+      .transition().duration(10000).style("fill-opacity", .25)
 
      path.pointRadius(8)
      d3_centerpoint.attr("d", path)
