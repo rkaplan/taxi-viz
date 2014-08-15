@@ -27,7 +27,7 @@ function updateGlobalBounds(curBounds) {
   }
 }
 
-function resetView() {
+function resetView(userDidZoom) {
   console.log("resetview!")
 
   var bounds = path.bounds(allPointsFeatColl);
@@ -51,19 +51,35 @@ function resetView() {
    g.attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
 
    // initialize the path data
-   path.pointRadius(3)
-   d3_features.attr("d", path)
-    .style("fill-opacity", .1)
-    .attr("fill", "red")
-    .transition().duration(200).style("fill-opacity", .8)
-    .transition().duration(5000).style("fill", "yellow")
-    .transition().duration(10000).style("fill-opacity", ".1")
 
-   path.pointRadius(8)
-   d3_centerpoint.attr("d", path)
-    .style("fill-opacity", .8)
-    .attr("fill", "green")
-    .transition().duration(500).style("fill-opacity", 0)
+   if (userDidZoom) {
+      d3_features = g.selectAll("path.unknown")
+      .data(_.map(allPointsFeatColl.features, function(feature) { return feature.geometry }))
+      .enter()
+      .append("path")
+
+      path.pointRadius(3)
+      d3_features.attr("d", path)
+      .style("fill-opacity", .5)
+      .attr("fill", "yellow")
+      .transition().duration(10000).style("fill-opacity", ".1")
+
+      cleanTripsStuckToPixels();
+   } else {
+     path.pointRadius(3)
+     d3_features.attr("d", path)
+      .style("fill-opacity", .1)
+      .attr("fill", "red")
+      .transition().duration(200).style("fill-opacity", .8)
+      .transition().duration(5000).style("fill", "yellow")
+      .transition().duration(10000).style("fill-opacity", ".1")
+
+     path.pointRadius(8)
+     d3_centerpoint.attr("d", path)
+      .style("fill-opacity", .8)
+      .attr("fill", "green")
+      .transition().duration(500).style("fill-opacity", 0)
+   }
 }
 
 function getDuplicateElementIndex(paths) {
@@ -141,7 +157,7 @@ function renderTrips() {
   // }
   }, 200);
 
-  map.on("viewreset", resetView);
+  map.on("viewreset", function() { resetView(true); });
 }
 
 function toFeatureCollection(geojsonArr) {
