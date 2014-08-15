@@ -6,91 +6,38 @@ function setupMapbox() {
   g = svg.append("g").attr("class", "leaflet-zoom-hide");
 }
 
-// var projection = d3.geo.mercator()
-//         .center([-73.94, 40.70])
-//         .scale(80000)
-//         .translate([(width) / 2, (height)/2]);
-
-// function renderBackground() {
-
-//   d3.json("nyc.json", function(error, nyb) {
-
-//     var path = d3.geo.path()
-//         .projection(projection);
-
-//     g.append("g")
-//       .attr("id", "boroughs")
-//       .selectAll(".state")
-//       .data(nyb.features)
-//       .enter().append("path")
-//       .attr("class", function(d){ return d.properties.name; })
-//       .attr("d", path);
-
-//   });
-// }
-
 var transform = d3.geo.transform({point: projectPoint});
 var path = d3.geo.path().projection(transform);
 var startLocs;
 var globalBounds;
-
-// var bbox;
 
 allPointsFeatColl = {
   "type": "FeatureCollection",
   "features": []
 };
 
-// // function updateBbox(startLocs) {
-//   if (!bbox) {
-//     bbox = {
-//      "type": "Feature",
-//      "geometry": {
-//       "type": "Polygon",
-//       "coordinates": [ [
-//       [ startLocs[0].coordinates[0], startLocs[0].coordinates[1] ], // top left
-//       [ startLocs[0].coordinates[0], startLocs[0].coordinates[1] ], // bottom right
-//       ] ]
-//       }
-//     };
-//     // bbox.geometry.coordinates[0][0][0] = startLocs[0].coordinates[0];
-//     // bbox.geometry.coordinates[0][0][1] = startLocs[0].coordinates[1];
-//     // bbox.geometry.coordinates[0][1][0] = startLocs[0].coordinates[0];
-//     // bbox.geometry.coordinates[0][1][1] = startLocs[0].coordinates[1];
-//   }
-
-//   for (var i = 0; i < startLocs.length; i++) {
-//     // top left
-//     if (startLocs[i].coordinates[0] < bbox.geometry.coordinates[0][0][0])
-//       bbox.geometry.coordinates[0][0][0] = startLocs[i].coordinates[0];
-//     if (startLocs[i].coordinates[1] < bbox.geometry.coordinates[0][0][1])
-//       bbox.geometry.coordinates[0][0][1] = startLocs[i].coordinates[1];
-
-//     // bottom right
-//     if (startLocs[i].coordinates[0] > bbox.geometry.coordinates[0][1][0])
-//       bbox.geometry.coordinates[0][1][0] = startLocs[i].coordinates[0];
-//     if (startLocs[i].coordinates[1] > bbox.geometry.coordinates[0][1][1])
-//       bbox.geometry.coordinates[0][1][1] = startLocs[i].coordinates[1];
-//   }
-// }
+function updateGlobalBounds(curBounds) {
+  if (globalBounds) {
+    if (curBounds[0][0] < globalBounds[0][0]) globalBounds[0][0] = curBounds[0][0];
+    if (curBounds[0][1] < globalBounds[0][1]) globalBounds[0][1] = curBounds[0][1];
+    if (curBounds[1][0] > globalBounds[1][0]) globalBounds[1][0] = curBounds[1][0];
+    if (curBounds[1][1] > globalBounds[1][1]) globalBounds[1][1] = curBounds[1][1];
+  } else {
+    globalBounds = curBounds;
+  }
+}
 
 function resetView() {
   console.log("resetview!")
-  // updateBbox(startLocs);
+
   var bounds = path.bounds(allPointsFeatColl);
+
   console.log("globalBounds:")
   console.log(globalBounds);
   console.log("bounds:")
   console.log(bounds)
-  if (globalBounds) {
-    if (bounds[0][0] < globalBounds[0][0]) globalBounds[0][0] = bounds[0][0];
-    if (bounds[0][1] < globalBounds[0][1]) globalBounds[0][1] = bounds[0][1];
-    if (bounds[1][0] > globalBounds[1][0]) globalBounds[1][0] = bounds[1][0];
-    if (bounds[1][1] > globalBounds[1][1]) globalBounds[1][1] = bounds[1][1];
-  } else {
-    globalBounds = bounds;
-  }
 
+  updateGlobalBounds(bounds);
   var topLeft = globalBounds[0],
   bottomRight = globalBounds[1];
 
@@ -119,6 +66,22 @@ function resetView() {
     .transition().duration(500).style("fill-opacity", 0)
 }
 
+function getDuplicateElementIndex(paths) {
+  for (var i = paths.length - 2; i >= 0; i--) { // -2 to skip very last element; we know it's green
+    if (paths[i].getAttribute("fill") === "green")
+      return i;
+  }
+  return -1;
+}
+
+function cleanTripsStuckToPixels() {
+  var paths = $("g.leaflet-zoom-hide").children();
+  var dupElementEnd = getDuplicateElementIndex(paths);
+  for (var i = dupElementEnd; i >= 0; i--) {
+    paths[i].remove();
+  }
+}
+
 function processTripData(trips) {
   var centerPoint = trips.pop();
   console.log(centerPoint);
@@ -129,6 +92,7 @@ function processTripData(trips) {
   // create path elements for each of the features
   d3_features = g.selectAll("path.unknown")
     .data(startLocs)
+    // .data(_.map(allPointsFeatColl.features, function(feature) { return feature.geometry }))
     .enter()
     .append("path")
 
@@ -138,6 +102,7 @@ function processTripData(trips) {
     .append("path")
 
   resetView();
+  // cleanTripsStuckToPixels();
 
   var pickupDate = new Date(Date.parse(trips[0].pickup_datetime["$date"]));
   $("#latestTripDateTime").html(pickupDate.toUTCString());
@@ -165,6 +130,7 @@ function processTripData(trips) {
 
 function renderTrips() {
   var intervalId = setInterval(function() {
+  // for (var i = 0; i < 10; i++) {
     d3.json("geo", function(error, trips) {
       if (trips === undefined || trips.length === 0) {
         clearInterval(intervalId);
@@ -172,6 +138,7 @@ function renderTrips() {
         processTripData(trips);
       }
     });
+  // }
   }, 200);
 
   map.on("viewreset", resetView);
@@ -210,4 +177,4 @@ function projectPoint(x, y) {
 setupMapbox();
 // renderBackground();
 renderTrips();
-$('.leaflet-control-zoom').hide();
+// $('.leaflet-control-zoom').hide();
